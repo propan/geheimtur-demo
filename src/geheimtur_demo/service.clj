@@ -10,35 +10,9 @@
               [selmer.util :refer :all]
               [geheimtur.interceptor :refer [form-based guard http-basic]]
               [geheimtur.util.auth :as auth :refer [authenticate]]
+              [geheimtur-demo.views :as views]
               [ring.middleware.session.cookie :as cookie]
               [ring.util.response :as ring-resp]))
-
-(defn about-page
-  [request]
-  (ring-resp/response (format "Clojure %s" (clojure-version))))
-
-(selmer/set-resource-path! "/home/propan/S/geheimtur-demo/resources/templates/")
-
-(defn home-page
-  [request]
-  (ring-resp/response (selmer/render-file "index.html" {})))
-
-(defn form-based-index
-  [request]
-  (ring-resp/response (selmer/render-file "form-based/index.html" {})))
-
-(defn form-based-restricted
-  [request]
-  (ring-resp/response (selmer/render-file "form-based/restricted.html" {})))
-
-(defn form-based-user-restricted
-  [request]
-  (ring-resp/response (selmer/render-file "form-based/user-restricted.html" {})))
-
-(defn form-based-admin-restricted
-  [request]
-  (ring-resp/response (selmer/render-file "form-based/admin-restricted.html" {})))
-
 
 (def users {"user" {:name "user" :password "password" :roles #{:user}}
             "admin" {:name "admin" :password "password" :roles #{:admin}}})
@@ -68,25 +42,17 @@
       (ring-resp/content-type "text/html;charset=UTF-8"))
     response))
 
-(defn login-handler
-  [request]
-  (let [action (if-let [return (get-in request [:params :return ])]
-                 (str "/login?return=" return)
-                 "/login")]
-    (ring-resp/response (selmer/render-file "form-based/login.html" {:action action}))))
-
-
 (defroutes routes
-  [[["/" {:get home-page}
+  [[["/" {:get views/home-page}
      ^:interceptors [(body-params/body-params)
                      bootstrap/html-body
                      #_(http-basic "Geheimtür Demo" credentials)]
-     ["/login" {:get login-handler}]
-     ["/form-based" {:get form-based-index} ^:interceptors []
-      ["/restricted" {:get form-based-restricted} ^:interceptors [(guard :silent? false)]]
-      ["/user-restricted" {:get form-based-user-restricted} ^:interceptors [(guard :silent? false :roles #{:user :admin})]]
-      ["/admin-restricted" {:get form-based-admin-restricted} ^:interceptors [(guard :roles #{:admin})]]]
-     ["/about" {:get about-page} ^:interceptors [(guard :silent? false)]]]]])
+     ["/login" {:get views/login-handler}]
+     ["/form-based" {:get views/form-based-index} ^:interceptors []
+      ["/restricted" {:get views/form-based-restricted} ^:interceptors [(guard :silent? false)]]
+      ["/user-restricted" {:get views/form-based-user-restricted} ^:interceptors [(guard :silent? false :roles #{:user :admin})]]
+      ["/admin-restricted" {:get views/form-based-admin-restricted} ^:interceptors [(guard :roles #{:admin})]]]
+     ["/about" {:get views/about-page} ^:interceptors [(guard :silent? false)]]]]])
 
 (defn merge-seq
   [xs p? merge-fn]
