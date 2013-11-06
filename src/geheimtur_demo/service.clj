@@ -10,11 +10,9 @@
               [geheimtur.impl.form-based :refer [default-login-handler default-logout-handler]]
               [geheimtur.util.auth :as auth :refer [authenticate]]
               [geheimtur-demo.views :as views]
+              [geheimtur-demo.users :refer [users]]
               [ring.middleware.session.cookie :as cookie]
               [ring.util.response :as ring-resp]))
-
-(def users {"user" {:name "user" :password "password" :roles #{:user}}
-            "admin" {:name "admin" :password "password" :roles #{:admin}}})
 
 (defn credentials
   [username password]

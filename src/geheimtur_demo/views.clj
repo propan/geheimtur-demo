@@ -1,5 +1,6 @@
 (ns geheimtur-demo.views
   (:require [geheimtur.util.auth :refer [get-identity]]
+            [geheimtur-demo.users :refer [users]]
             [ring.util.response :as ring-resp]
             [hiccup.page :as h]
             [hiccup.element :as e]))
@@ -33,7 +34,7 @@
     (when-not (nil? user)
       [:div {:class "navbar-right"}
        [:p {:class "navbar-text"}
-        (str "Signed in as " (:name user))]
+        "Signed in as " [:strong (:full-name user)]]
        [:a {:href "/logout" :class "btn btn-primary navbar-btn"}
         "Logout"]])]])
 
@@ -97,7 +98,12 @@
   (ring-resp/response
    (h/html5 head (body (get-identity request)
                   [:h2 "Form-based authentication"]
-                  [:p "You are reaching a restricted area. You can proceed the following ways:"
+                  [:p "This part of the application demonstrated the form-based authentication flow.
+                       Below you can find links that lead to the pages with different access level.
+                       Geheimtur allows to to hide pages from anonymous users or users that have not enough access rights. "
+                       [:strong "admin-restricted-hidden"] " - is an example of such a page, instead of getting \"Access Forbidden\" page "
+                       "or being prompted their password, users are shown 404 \"Page Not Found\" in response."]
+                  [:p "You can proceed the following ways:"
                    [:ul
                     [:li
                      [:a {:href "/form-based/restricted"} "restricted"] " - open for any authenticated user"]
@@ -108,15 +114,27 @@
 
 (defn form-based-restricted
   [request]
-  (ring-resp/response (h/html5 head (body (get-identity request)))))
+  (let [identity (get-identity request)]
+    (ring-resp/response (h/html5 head (body identity
+                                            [:h2 "Restricted area"]
+                                            [:p "Hello, " (:name identity) "! We are happy you found a way to reach this page. Only real users can achieve such an amazing page!"])))))
 
 (defn form-based-admin-restricted
   [request]
-  (ring-resp/response (h/html5 head (body (get-identity request)))))
+  (let [identity (get-identity request)]
+    (ring-resp/response (h/html5 head (body identity
+                                            [:h2 "Administrator Only Area"]
+                                            [:p "Here is what we know about you: " identity])))))
 
 (defn form-based-admin-restricted-hidden
   [request]
-  (ring-resp/response (h/html5 head (body (get-identity request)))))
+  (ring-resp/response (h/html5 head (body (get-identity request)
+                                          [:h2 "Administrator Only Area"]
+                                          [:p "This is our most secret area and we wanted to make it really special, so here's the list of all system users:"]
+                                          [:ul
+                                           (for [rec users
+                                                 :let [u (second rec)]]
+                                             [:li [:strong (:full-name u)] ": " (:name u) "/" (:password u)])]))))
 
 (defn login-page
   [{:keys [params] :as request}]
