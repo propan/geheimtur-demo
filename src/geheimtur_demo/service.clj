@@ -51,14 +51,15 @@
      ^:interceptors [(body-params/body-params)
                      bootstrap/html-body
                      session-interceptor
-                     access-forbidden-interceptor
-                     #_(http-basic "Geheimtür Demo" credentials)]
+                     ]
      ["/login" {:get views/login-page :post login-post-handler}]
      ["/logout" {:get default-logout-handler}]
-     ["/form-based" {:get views/form-based-index} ^:interceptors [(form-based {})]
+     ["/form-based" {:get views/form-based-index} ^:interceptors [access-forbidden-interceptor (form-based {})]
       ["/restricted" {:get views/form-based-restricted} ^:interceptors [(guard :silent? false)]]
       ["/admin-restricted" {:get views/form-based-admin-restricted} ^:interceptors [(guard :silent? false :roles #{:admin})]]
       ["/admin-restricted-hidden" {:get views/form-based-admin-restricted-hidden} ^:interceptors [(guard :roles #{:admin})]]]
+     ["/http-basic" {:get views/http-basic-index} ^:interceptors [(http-basic "Geheimtür Demo" credentials)]
+      ["/restricted" {:get views/http-basic-restricted} ^:interceptors [(guard :silent? false)]]]
      ["/about" {:get views/about-page} ^:interceptors [(guard :silent? false)]]]]])
 
 (def service (-> {:env :prod
