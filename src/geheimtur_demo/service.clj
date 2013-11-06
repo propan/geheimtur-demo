@@ -7,7 +7,7 @@
               [io.pedestal.service.interceptor :as interceptor :refer [defon-response]]
               [io.pedestal.service.log :as log]
               [geheimtur.interceptor :refer [form-based guard http-basic]]
-              [geheimtur.impl.form-based :refer [default-login-handler]]
+              [geheimtur.impl.form-based :refer [default-login-handler default-logout-handler]]
               [geheimtur.util.auth :as auth :refer [authenticate]]
               [geheimtur-demo.views :as views]
               [ring.middleware.session.cookie :as cookie]
@@ -56,10 +56,11 @@
                      access-forbidden-interceptor
                      #_(http-basic "Geheimtür Demo" credentials)]
      ["/login" {:get views/login-page :post login-post-handler}]
+     ["/logout" {:get default-logout-handler}]
      ["/form-based" {:get views/form-based-index} ^:interceptors [(form-based {})]
       ["/restricted" {:get views/form-based-restricted} ^:interceptors [(guard :silent? false)]]
-      ["/user-restricted" {:get views/form-based-user-restricted} ^:interceptors [(guard :silent? false :roles #{:user :admin})]]
-      ["/admin-restricted" {:get views/form-based-admin-restricted} ^:interceptors [(guard :roles #{:admin})]]]
+      ["/admin-restricted" {:get views/form-based-admin-restricted} ^:interceptors [(guard :silent? false :roles #{:admin})]]
+      ["/admin-restricted-hidden" {:get views/form-based-admin-restricted-hidden} ^:interceptors [(guard :roles #{:admin})]]]
      ["/about" {:get views/about-page} ^:interceptors [(guard :silent? false)]]]]])
 
 (def service (-> {:env :prod

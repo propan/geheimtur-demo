@@ -1,5 +1,6 @@
 (ns geheimtur-demo.views
-  (:require [ring.util.response :as ring-resp]
+  (:require [geheimtur.util.auth :refer [get-identity]]
+            [ring.util.response :as ring-resp]
             [hiccup.page :as h]
             [hiccup.element :as e]))
 
@@ -13,24 +14,36 @@
    [:script {:src "/js/respond.min.js"}]
    "<![endif]-->"])
 
+(defn navbar
+  [user]
+  [:nav {:class "navbar navbar-default" :role "navigation"}
+   [:div {:class "navbar-header"}
+    [:button {:type "button" :class "navbar-toggle" :data-toggle "collapse" :data-target ".navbar-ext1-collapse"}
+     [:span {:class "sr-only"} "Toggle navigation"]
+     [:span {:class "icon-bar"}]
+     [:span {:class "icon-bar"}]
+     [:span {:class "icon-bar"}]]
+    [:a {:class "navbar-brand" :href "/"} "Geheimtür Demo"]]
+   [:div {:class "collapse navbar-collapse navbar-ex1-collapse"}
+    [:ul {:class "nav navbar-nav"}
+     [:li
+      [:a {:href "/form-based"} "Form-Based"]]
+     [:li
+      [:a {:href "/http-basic"} "HTTP-Basic"]]]
+    (when-not (nil? user)
+      [:div {:class "navbar-right"}
+       [:p {:class "navbar-text"}
+        (str "Signed in as " (:name user))]
+       [:a {:href "/logout" :class "btn btn-primary navbar-btn"}
+        "Logout"]])]])
+
 (defn body
-  [& content]
+  [user & content]
   [:body
-   [:nav {:class "navbar navbar-default" :role "navigation"}
-    [:div {:class "navbar-header"}
-     [:button {:type "button" :class "navbar-toggle" :data-toggle "collapse" :data-target ".navbar-ext1-collapse"}
-      [:span {:class "sr-only"} "Toggle navigation"]
-      [:span {:class "icon-bar"}]
-      [:span {:class "icon-bar"}]
-      [:span {:class "icon-bar"}]]
-     [:a {:class "navbar-brand" :href "/"} "Geheimtür Demo"]]
-    [:div {:class "collapse navbar-collapse navbar-ex1-collapse"}
-     [:ul {:class "nav navbar-nav"}
-      [:li
-       [:a {:href "/form-based"} "Form-Based"]]
-      [:li
-       [:a {:href "/http-basic"} "HTTP-Basic"]]]]]
-   (into [:div {:class "container"}] content)
+   (navbar user)
+   [:div {:class "container"}
+    [:div {:class "row"}
+     content]]
    [:script {:src "//code.jquery.com/jquery.js"}]
    [:script {:src "/js/bootstrap.min.js"}]])
 
@@ -57,7 +70,8 @@
 (defn error-page
   [context]
   (ring-resp/response
-   (h/html5 head (body [:h2 (:title context)]
+   (h/html5 head (body (:user context)
+                       [:h2 (:title context)]
                        [:p (:message context)]))))
 
 (defn about-page
@@ -67,32 +81,42 @@
 (defn home-page
   [request]
   (ring-resp/response
-   (h/html5 head (body))))
+   (h/html5 head (body (get-identity request)
+                       [:div {:class "col-lg-8 col-lg-offset-2"}
+                        [:p [:a {:href "https://github.com/propan/geheimtur"} "geheimtur"]
+                         " - is a collection of interceptors and functions that simplify addition of authentication/authorization to your Pedestal application. "
+                         "At this moment, it provides support for form-based and http-basic authentications."]
+                        [:h3 "Credentials"]
+                        [:p "All demos accept the following username/password combinations:"]
+                        [:ul
+                         [:li [:code "user/password"] " - associated with *user* role"]
+                         [:li [:code "admin/password"] " - assosiated with *admin* role"]]]))))
 
 (defn form-based-index
   [request]
   (ring-resp/response
-   (h/html5 head (body [:h2 "Form-based authentication"]
-                       [:p "You are reaching a restricted area. You can proceed the following ways:"
-                        [:ul
-                         [:li
-                          [:a {:href "/form-based/restricted"} "restricted"] " - open for any authenticated user"]
-                         [:li
-                          [:a {:href "/form-based/user-restricted"} "user-restricted"] " - open for users and administrators"]
-                         [:li
-                          [:a {:href "/form-based/admin-restricted"} "admin-restricted"] " - open for administrators and hidden for the rest of the world"]]]))))
+   (h/html5 head (body (get-identity request)
+                  [:h2 "Form-based authentication"]
+                  [:p "You are reaching a restricted area. You can proceed the following ways:"
+                   [:ul
+                    [:li
+                     [:a {:href "/form-based/restricted"} "restricted"] " - open for any authenticated user"]
+                    [:li
+                     [:a {:href "/form-based/admin-restricted"} "admin-restricted"] " - open for administrators only"]
+                    [:li
+                     [:a {:href "/form-based/admin-restricted-hidden"} "admin-restricted-hidden"] " - open for administrators and hidden for the rest of the world"]]]))))
 
 (defn form-based-restricted
   [request]
-  (ring-resp/response (h/html5 head (body))))
-
-(defn form-based-user-restricted
-  [request]
-  (ring-resp/response (h/html5 head (body))))
+  (ring-resp/response (h/html5 head (body (get-identity request)))))
 
 (defn form-based-admin-restricted
   [request]
-  (ring-resp/response (h/html5 head (body))))
+  (ring-resp/response (h/html5 head (body (get-identity request)))))
+
+(defn form-based-admin-restricted-hidden
+  [request]
+  (ring-resp/response (h/html5 head (body (get-identity request)))))
 
 (defn login-page
   [{:keys [params] :as request}]
@@ -100,4 +124,4 @@
                     (str "/login?return=" return)
                     "/login")
         has-error (contains? params :error)]
-    (ring-resp/response (h/html5 head (body (login-form action has-error))))))
+    (ring-resp/response (h/html5 head (body (get-identity request) (login-form action has-error))))))
