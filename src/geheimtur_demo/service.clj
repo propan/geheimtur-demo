@@ -67,7 +67,7 @@
                   ::bootstrap/resource-path "/public"
                   ::bootstrap/not-found-interceptor not-found-interceptor
                   ::bootstrap/type :jetty
-                  ::bootstrap/port (or (System/getenv "PORT") 8080)}
+                  ::bootstrap/port (Integer/valueOf (or (System/getenv "PORT") "8080"))}
                (bootstrap/default-interceptors)))
 
 
