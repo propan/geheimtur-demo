@@ -75,10 +75,6 @@
                        [:h2 (:title context)]
                        [:p (:message context)]))))
 
-(defn about-page
-  [request]
-  (ring-resp/response (format "Clojure %s" (clojure-version))))
-
 (defn home-page
   [request]
   (ring-resp/response

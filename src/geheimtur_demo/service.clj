@@ -50,8 +50,7 @@
   [[["/" {:get views/home-page}
      ^:interceptors [(body-params/body-params)
                      bootstrap/html-body
-                     session-interceptor
-                     ]
+                     session-interceptor]
      ["/login" {:get views/login-page :post login-post-handler}]
      ["/logout" {:get default-logout-handler}]
      ["/form-based" {:get views/form-based-index} ^:interceptors [access-forbidden-interceptor (form-based {})]
@@ -59,8 +58,7 @@
       ["/admin-restricted" {:get views/form-based-admin-restricted} ^:interceptors [(guard :silent? false :roles #{:admin})]]
       ["/admin-restricted-hidden" {:get views/form-based-admin-restricted-hidden} ^:interceptors [(guard :roles #{:admin})]]]
      ["/http-basic" {:get views/http-basic-index} ^:interceptors [(http-basic "Geheimtür Demo" credentials)]
-      ["/restricted" {:get views/http-basic-restricted} ^:interceptors [(guard :silent? false)]]]
-     ["/about" {:get views/about-page} ^:interceptors [(guard :silent? false)]]]]])
+      ["/restricted" {:get views/http-basic-restricted} ^:interceptors [(guard :silent? false)]]]]]])
 
 (def service (-> {:env :prod
                   ::bootstrap/routes routes
@@ -69,5 +67,4 @@
                   ::bootstrap/type :jetty
                   ::bootstrap/port (Integer/valueOf (or (System/getenv "PORT") "8080"))}
                (bootstrap/default-interceptors)))
-
 
