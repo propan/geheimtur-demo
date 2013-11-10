@@ -8,8 +8,8 @@
                  [io.pedestal/pedestal.service-tools "0.2.2"]
                  [io.pedestal/pedestal.jetty "0.2.2"]
                  [hiccup "1.0.4"]
-                 [geheimtur "0.1.0"]
-                 ]
+                 [geheimtur "0.1.1-SNAPSHOT"]
+                 [cheshire "5.2.0"]]
   :min-lein-version "2.0.0"
   :resource-paths ["config", "resources"]
   :aliases {"run-dev" ["trampoline" "run" "-m" "geheimtur-demo.server/run-dev"]}

@@ -9,6 +9,7 @@
   [:head
    [:title "Geheimtür Demo"]
    [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0"}]
+   [:link {:href "/css/auth-buttons.css" :media "screen" :rel "stylesheet" :type "text/css"}]
    [:link {:href "/css/bootstrap.min.css" :media "screen" :rel "stylesheet" :type "text/css"}]
    "<!--[if lt IE 9]>"
    [:script {:src "/js/html5shiv.js"}]
@@ -28,7 +29,7 @@
    [:div {:class "collapse navbar-collapse navbar-ex1-collapse"}
     [:ul {:class "nav navbar-nav"}
      [:li
-      [:a {:href "/form-based"} "Form-Based"]]
+      [:a {:href "/interactive"} "Interactive"]]
      [:li
       [:a {:href "/http-basic"} "HTTP-Basic"]]]
     (when-not (nil? user)
@@ -49,14 +50,14 @@
    [:script {:src "/js/bootstrap.min.js"}]])
 
 (defn login-form
-  [action has-error]
+  [return has-error]
   [:div {:class "row"}
    [:div {:class "col-lg-6 col-lg-offset-3"}
     (when has-error
       [:div {:class "alert alert-danger alert-dismissable"}
        [:button {:type "button" :class "close" :data-dismiss "alert" :aria-hidden "true"} "&times;"]
        "Wrong username and password combination."])
-    [:form {:method "POST" :action action :accept-charset "UTF-8"}
+    [:form {:method "POST" :action (if return (str "/login?return=" return) "/login") :accept-charset "UTF-8"}
      [:fieldset
       [:legend "Sign in"]
       [:div {:class "form-group"}
@@ -66,7 +67,11 @@
        [:label {:for "password" :class "control-label hidden"} "Password"]
        [:input {:type "password" :class "form-control" :id "password" :name "password" :placeholder "Password"}]]
       [:div {:class "form-group"}
-       [:button {:type "submit" :class "btn btn-default btn-block"} "Sign in"]]]]]])
+       [:button {:type "submit" :class "btn btn-default btn-block"} "Sign in"]]
+      [:legend "or"]
+      [:div {:class "row"}
+       [:div {:class "col-lg-6"}
+        [:a {:class "btn-auth btn-github large" :href (str "/oauth.login?provider=github" (if return (str "&return=" return) ""))} "Sign in with " [:b "Github"]]]]]]]])
 
 (defn error-page
   [context]
@@ -82,7 +87,7 @@
                        [:div {:class "col-lg-8 col-lg-offset-2"}
                         [:p [:a {:href "https://github.com/propan/geheimtur"} "geheimtur"]
                          " - is a collection of interceptors and functions that simplify addition of authentication/authorization to your Pedestal application. "
-                         "At this moment, it provides support for form-based and http-basic authentications."]
+                         "At this moment, it provides support for interactive (form-based or OAuth2) and http-basic authentications."]
                         [:p "The source code of this application is available on " [:a {:href "https://github.com/propan/geheimtur-demo"} "GitHub"]]
                         [:h3 "Credentials"]
                         [:p "All demos accept the following username/password combinations:"]
@@ -90,27 +95,31 @@
                          [:li [:code "user/password"] " - associated with *user* role"]
                          [:li [:code "admin/password"] " - assosiated with *admin* role"]]]))))
 
-(defn form-based-index
+(defn interactive-index
   [request]
   (ring-resp/response
    (h/html5 head (body (get-identity request)
                        [:div {:class "col-lg-8 col-lg-offset-2"}
-                        [:h2 "Form-based authentication"]
-                        [:p "This part of the application demonstrated the form-based authentication flow.
-                       Below you can find links that lead to the pages with different access level.
-                       Geheimtur allows to to hide pages from anonymous users or users that have not enough access rights. "
-                         [:strong "admin-restricted-hidden"] " - is an example of such a page, instead of getting \"Access Forbidden\" page "
-                         "or being prompted their password, users are shown 404 \"Page Not Found\" in response."]
+                        [:h2 "Interactive authentication"]
+                        [:p "This part of the application demonstrated the interactive authentication flow.
+                             You can use one of the known credentials or an external service like GitHub or Google to log in.
+                             Below you can find links that lead to the pages with different access level.
+                             Geheimtur allows to to hide pages from anonymous users or users that have not enough access rights. "
+                             [:strong "admin-restricted-hidden"] " - is an example of such a page, instead of getting \"Access Forbidden\" page "
+                            "or being prompted their password, users are shown 404 \"Page Not Found\" in response."]
+                        [:div {:class "alert alert-danger"}
+                         "If you use GitHub or Google to login into the demo application, for security reasons, don't forget to revoke access to \"Geheimur Application\" when you are done,
+                          even though the demo applicaiton does not store obtained access token."]
                         [:p "You can proceed the following ways:"
                          [:ul
                           [:li
-                           [:a {:href "/form-based/restricted"} "restricted"] " - open for any authenticated user"]
+                           [:a {:href "/interactive/restricted"} "restricted"] " - open for any authenticated user"]
                           [:li
-                           [:a {:href "/form-based/admin-restricted"} "admin-restricted"] " - open for administrators only"]
+                           [:a {:href "/interactive/admin-restricted"} "admin-restricted"] " - open for administrators only"]
                           [:li
-                           [:a {:href "/form-based/admin-restricted-hidden"} "admin-restricted-hidden"] " - open for administrators and hidden for the rest of the world"]]]]))))
+                           [:a {:href "/interactive/admin-restricted-hidden"} "admin-restricted-hidden"] " - open for administrators and hidden for the rest of the world"]]]]))))
 
-(defn form-based-restricted
+(defn interactive-restricted
   [request]
   (let [identity (get-identity request)]
     (ring-resp/response (h/html5 head (body identity
@@ -118,7 +127,7 @@
                                              [:h2 "Restricted area"]
                                              [:p "Hello, " (:name identity) "! We are happy you found a way to reach this page. Only real users can achieve such an amazing page!"]])))))
 
-(defn form-based-admin-restricted
+(defn interactive-admin-restricted
   [request]
   (let [identity (get-identity request)]
     (ring-resp/response (h/html5 head (body identity
@@ -126,7 +135,7 @@
                                              [:h2 "Administrator Only Area"]
                                              [:p "Here is what we know about you: " identity]])))))
 
-(defn form-based-admin-restricted-hidden
+(defn interactive-admin-restricted-hidden
   [request]
   (ring-resp/response (h/html5 head (body (get-identity request)
                                           [:div {:class "col-lg-8 col-lg-offset-2"}
@@ -139,11 +148,8 @@
 
 (defn login-page
   [{:keys [params] :as request}]
-  (let [action    (if-let [return (:return params)]
-                    (str "/login?return=" return)
-                    "/login")
-        has-error (contains? params :error)]
-    (ring-resp/response (h/html5 head (body (get-identity request) (login-form action has-error))))))
+  (let [has-error (contains? params :error)]
+    (ring-resp/response (h/html5 head (body (get-identity request) (login-form (:return params) has-error))))))
 
 (defn http-basic-index
   [request]
