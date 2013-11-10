@@ -81,7 +81,7 @@
      ["/login" {:get views/login-page :post login-post-handler}]
      ["/logout" {:get default-logout-handler}]
      ["/oauth.login" {:get oath-handler}]
-     ["/callback" {:get oath-callback-handler}]
+     ["/oauth.callback" {:get oath-callback-handler}]
      ["/interactive" {:get views/interactive-index} ^:interceptors [access-forbidden-interceptor (interactive {})]
       ["/restricted" {:get views/interactive-restricted} ^:interceptors [(guard :silent? false)]]
       ["/admin-restricted" {:get views/interactive-admin-restricted} ^:interceptors [(guard :silent? false :roles #{:admin})]]
