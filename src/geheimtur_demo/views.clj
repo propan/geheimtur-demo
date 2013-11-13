@@ -77,8 +77,17 @@
   [context]
   (ring-resp/response
    (h/html5 head (body (:user context)
-                       [:h2 (:title context)]
-                       [:p (:message context)]))))
+                       [:div {:class "col-lg-8 col-lg-offset-2"}
+                        [:h2 (:title context)]
+                        [:p (:message context)]]))))
+
+(defn unauthorized
+  [request]
+  (ring-resp/response
+   (h/html5 head (body nil
+                       [:div {:class "col-lg-8 col-lg-offset-2"}
+                        [:h2 "Unauthorized"]
+                        [:p "It looks like there was a problem authenticating you, sir. Please try again."]]))))
 
 (defn home-page
   [request]
