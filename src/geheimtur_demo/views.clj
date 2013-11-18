@@ -51,27 +51,26 @@
 
 (defn login-form
   [return has-error]
-  [:div {:class "row"}
-   [:div {:class "col-lg-6 col-lg-offset-3"}
-    (when has-error
-      [:div {:class "alert alert-danger alert-dismissable"}
-       [:button {:type "button" :class "close" :data-dismiss "alert" :aria-hidden "true"} "&times;"]
-       "Wrong username and password combination."])
-    [:form {:method "POST" :action (if return (str "/login?return=" return) "/login") :accept-charset "UTF-8"}
-     [:fieldset
-      [:legend "Sign in"]
-      [:div {:class "form-group"}
-       [:label {:for "username" :class "control-label hidden"} "Username"]
-       [:input {:type "text" :class "form-control" :id "username" :name "username" :placeholder "Username" :autocomplete "off"}]]
-      [:div {:class "form-group"}
-       [:label {:for "password" :class "control-label hidden"} "Password"]
-       [:input {:type "password" :class "form-control" :id "password" :name "password" :placeholder "Password"}]]
-      [:div {:class "form-group"}
-       [:button {:type "submit" :class "btn btn-default btn-block"} "Sign in"]]
-      [:legend "or"]
-      [:div {:class "row"}
-       [:div {:class "col-lg-6"}
-        [:a {:class "btn-auth btn-github large" :href (str "/oauth.login?provider=github" (if return (str "&return=" return) ""))} "Sign in with " [:b "Github"]]]]]]]])
+  [:div {:class "col-lg-6 col-lg-offset-3"}
+   (when has-error
+     [:div {:class "alert alert-danger alert-dismissable"}
+      [:button {:type "button" :class "close" :data-dismiss "alert" :aria-hidden "true"} "&times;"]
+      "Wrong username and password combination."])
+   [:form {:method "POST" :action (if return (str "/login?return=" return) "/login") :accept-charset "UTF-8"}
+    [:fieldset
+     [:legend "Sign in"]
+     [:div {:class "form-group"}
+      [:label {:for "username" :class "control-label hidden"} "Username"]
+      [:input {:type "text" :class "form-control" :id "username" :name "username" :placeholder "Username" :autocomplete "off"}]]
+     [:div {:class "form-group"}
+      [:label {:for "password" :class "control-label hidden"} "Password"]
+      [:input {:type "password" :class "form-control" :id "password" :name "password" :placeholder "Password"}]]
+     [:div {:class "form-group"}
+      [:button {:type "submit" :class "btn btn-default btn-block"} "Sign in"]]
+     [:legend "or"]
+     [:div {:class "row"}
+      [:div {:class "col-lg-6"}
+       [:a {:class "btn-auth btn-github large" :href (str "/oauth.login?provider=github" (if return (str "&return=" return) ""))} "Sign in with " [:b "Github"]]]]]]])
 
 (defn error-page
   [context]
