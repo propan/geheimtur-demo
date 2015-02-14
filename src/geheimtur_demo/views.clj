@@ -167,7 +167,14 @@
                                            [:p "This part of the application demonstrated the HTTP Basic authentication flow. 
                                                That flow provides the same authorization options as the form-based flow, but instead of redirecting 
                                                users to the authentication page, they are prompted for HTTP Basic credentials."]
-                                           [:p "If you try to access " [:a {:href "/http-basic/restricted"} "restricted area"] ", you will be prompted (by your browser) to enter valid credentials."]
+                                           [:p "If you try to access any restricted area, you will be prompted (by your browser) to enter valid credentials. You can try accessing the following pages:"
+                                            [:ul
+                                             [:li
+                                              [:a {:href "/http-basic/restricted"} "restricted"] " - available to any authenticated user"]
+                                             [:li
+                                              [:a {:href "/http-basic/admin-restricted"} "admin-restricted"] " - available to administrators only"]
+                                             [:li
+                                              [:a {:href "/http-basic/admin-restricted-hidden"} "admin-restricted-hidden"] " - available to administrators and hidden for the rest of the world"]]]
                                            [:div {:class "alert alert-warning"}
                                             "Some browsers save HTTP Basic credentials for the duration of the session and resend them automatically, so logging out might not work as expected."]]))))
 
@@ -178,3 +185,23 @@
                                             [:div {:class "col-lg-8 col-lg-offset-2"}
                                              [:h2 "HTTP Basic restricted area"]
                                              [:p "Congratulations, " (:full-name identity) ", you successfuly bypassed HTTP Basic authentication!"]])))))
+
+(defn http-basic-admin-restricted
+  [request]
+  (let [identity (get-identity request)]
+    (ring-resp/response (h/html5 head (body identity
+                                            [:div {:class "col-lg-8 col-lg-offset-2"}
+                                             [:h2 "HTTP Basic Administrator Only Area"]
+                                             [:p "Here is what we know about you: " identity]])))))
+
+
+(defn http-basic-admin-restricted-hidden
+  [request]
+  (ring-resp/response (h/html5 head (body (get-identity request)
+                                          [:div {:class "col-lg-8 col-lg-offset-2"}
+                                           [:h2 "HTTP Basic Administrator Only Area"]
+                                           [:p "This is our most secret area and we wanted to make it really special, so here's the list of all system users:"]
+                                           [:ul
+                                            (for [rec users
+                                                  :let [u (second rec)]]
+                                              [:li [:strong (:full-name u)] ": " (:name u) "/" (:password u)])]]))))

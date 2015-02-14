@@ -46,8 +46,8 @@
 
 (defn on-github-success
   [{:keys [identity return]}]
-  (let [user {:name (:login identity)
-              :roles #{:user}
+  (let [user {:name      (:login identity)
+              :roles     #{:user}
               :full-name (:name identity)}]
     (->
      (ring-resp/redirect return)
@@ -88,7 +88,9 @@
       ["/admin-restricted" {:get views/interactive-admin-restricted} ^:interceptors [(guard :silent? false :roles #{:admin})]]
       ["/admin-restricted-hidden" {:get views/interactive-admin-restricted-hidden} ^:interceptors [(guard :roles #{:admin})]]]
      ["/http-basic" {:get views/http-basic-index} ^:interceptors [(http-basic "Geheimtür Demo" credentials)]
-      ["/restricted" {:get views/http-basic-restricted} ^:interceptors [(guard :silent? false)]]]]]])
+      ["/restricted" {:get views/http-basic-restricted} ^:interceptors [(guard :silent? false)]]
+      ["/admin-restricted" {:get views/http-basic-admin-restricted} ^:interceptors [(guard :silent? false :roles #{:admin})]]
+      ["/admin-restricted-hidden" {:get views/http-basic-admin-restricted-hidden} ^:interceptors [(guard :roles #{:admin})]]]]]])
 
 (def service (-> {:env :prod
                   ::bootstrap/routes routes
