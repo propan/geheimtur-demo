@@ -73,7 +73,7 @@
 (def oath-callback-handler
   (callback-handler providers))
 
-(interceptor/definterceptor session-interceptor
+(def session-interceptor
   (middlewares/session {:cookie-name "SID"
                         :store (cookie/cookie-store)}))
 
