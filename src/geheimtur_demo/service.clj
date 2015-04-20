@@ -4,7 +4,7 @@
               [io.pedestal.http.body-params :as body-params]
               [io.pedestal.http.route.definition :refer [defroutes]]
               [io.pedestal.http.ring-middlewares :as middlewares]
-              [io.pedestal.interceptor :as interceptor :refer [defon-response]]
+              [io.pedestal.interceptor.helpers :as interceptor :refer [defon-response]]
               [io.pedestal.log :as log]
               [geheimtur.interceptor :refer [interactive guard http-basic]]
               [geheimtur.impl.form-based :refer [default-login-handler default-logout-handler]]

@@ -4,11 +4,11 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [io.pedestal/pedestal.service "0.3.1"]
-                 [io.pedestal/pedestal.service-tools "0.3.1"]
-                 [io.pedestal/pedestal.jetty "0.3.1"]
+                 [io.pedestal/pedestal.service "0.4.0"]
+                 [io.pedestal/pedestal.service-tools "0.4.0"]
+                 [io.pedestal/pedestal.jetty "0.4.0"]
                  [hiccup "1.0.4"]
-                 [geheimtur "0.1.3"]
+                 [geheimtur "0.1.4"]
                  [cheshire "5.2.0"]]
   :min-lein-version "2.0.0"
   :resource-paths ["config", "resources"]
