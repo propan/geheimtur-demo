@@ -4,7 +4,7 @@
               [io.pedestal.http.body-params :as body-params]
               [io.pedestal.http.route.definition :refer [defroutes]]
               [io.pedestal.http.ring-middlewares :as middlewares]
-              [io.pedestal.interceptor.helpers :as interceptor :refer [defon-response]]
+              [io.pedestal.interceptor.helpers :as interceptor :refer [on-response]]
               [io.pedestal.log :as log]
               [geheimtur.interceptor :refer [interactive guard http-basic]]
               [geheimtur.impl.form-based :refer [default-login-handler default-logout-handler]]
@@ -22,24 +22,28 @@
     (when (= password (:password identity))
       (dissoc identity :password ))))
 
-(defon-response access-forbidden-interceptor
-  [response]
-  (if (or
-        (= 401 (:status response))
-        (= 403 (:status response)))
-    (->
-     (views/error-page {:title "Access Forbidden" :message (:body response)})
-     (ring-resp/content-type "text/html;charset=UTF-8"))
-    response))
+(def access-forbidden-interceptor
+  (on-response
+   ::access-forbidden-interceptor
+   (fn [response]
+     (if (or
+          (= 401 (:status response))
+          (= 403 (:status response)))
+       (->
+        (views/error-page {:title "Access Forbidden" :message (:body response)})
+        (ring-resp/content-type "text/html;charset=UTF-8"))
+       response))))
 
-(defon-response not-found-interceptor
-  [response]
-  (if-not (ring-resp/response? response)
-    (->
-     (views/error-page {:title   "Not Found"
-                        :message "We are sorry, but the page you are looking for does not exist."})
-     (ring-resp/content-type "text/html;charset=UTF-8"))
-    response))
+(def not-found-interceptor
+  (on-response
+   ::not-found-interceptor
+   (fn [response]
+     (if-not (ring-resp/response? response)
+       (->
+        (views/error-page {:title   "Not Found"
+                           :message "We are sorry, but the page you are looking for does not exist."})
+        (ring-resp/content-type "text/html;charset=UTF-8"))
+       response))))
 
 (def login-post-handler
   (default-login-handler {:credential-fn credentials}))
