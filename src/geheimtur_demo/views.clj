@@ -9,8 +9,9 @@
   [:head
    [:title "Geheimtür Demo"]
    [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0"}]
-   [:link {:href "/css/auth-buttons.css" :media "screen" :rel "stylesheet" :type "text/css"}]
    [:link {:href "/css/bootstrap.min.css" :media "screen" :rel "stylesheet" :type "text/css"}]
+   [:link {:href "/css/bootstrap-social.css" :media "screen" :rel "stylesheet" :type "text/css"}]
+   [:link {:href "//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" :media "screen" :rel "stylesheet" :type "text/css"}]
    "<!--[if lt IE 9]>"
    [:script {:src "/js/html5shiv.js"}]
    [:script {:src "/js/respond.min.js"}]
@@ -70,7 +71,11 @@
      [:legend "or"]
      [:div {:class "row"}
       [:div {:class "col-lg-6"}
-       [:a {:class "btn-auth btn-github large" :href (str "/oauth.login?provider=github" (if return (str "&return=" return) ""))} "Sign in with " [:b "Github"]]]]]]])
+       [:a {:class "btn btn-block btn-social btn-lg btn-github" :href (str "/oauth.login?provider=github" (if return (str "&return=" return) ""))}
+        [:i {:class "fa fa-github"}] "Sign in with " [:b "Github"]]]
+      [:div {:class "col-lg-6"}
+       [:a {:class "btn btn-block btn-social btn-lg btn-google" :href (str "/oauth.login?provider=google" (if return (str "&return=" return) ""))}
+        [:i {:class "fa fa-google"}] "Sign in with " [:b "Google"]]]]]]])
 
 (defn error-page
   [context]
