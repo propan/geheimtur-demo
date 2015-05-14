@@ -3,3 +3,4 @@ tmp/
 logs/
 .lein-repl-history
 pom.xml
+heroku.sh
