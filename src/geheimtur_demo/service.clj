@@ -3,7 +3,6 @@
               [io.pedestal.http.route :as route]
               [io.pedestal.http.body-params :as body-params]
               [io.pedestal.http.route.definition :refer [defroutes]]
-              [io.pedestal.http.ring-middlewares :as middlewares]
               [io.pedestal.interceptor.helpers :as interceptor :refer [on-response]]
               [io.pedestal.log :as log]
               [geheimtur.interceptor :refer [interactive guard http-basic]]
@@ -73,15 +72,10 @@
 (def oath-callback-handler
   (callback-handler providers))
 
-(def session-interceptor
-  (middlewares/session {:cookie-name "SID"
-                        :store (cookie/cookie-store)}))
-
 (defroutes routes
   [[["/" {:get views/home-page}
      ^:interceptors [(body-params/body-params)
-                     bootstrap/html-body
-                     session-interceptor]
+                     bootstrap/html-body]
      ["/login" {:get views/login-page :post login-post-handler}]
      ["/logout" {:get default-logout-handler}]
      ["/oauth.login" {:get oath-handler}]
@@ -101,6 +95,8 @@
                   ::bootstrap/resource-path "/public"
                   ::bootstrap/not-found-interceptor not-found-interceptor
                   ::bootstrap/type :jetty
+                  ::bootstrap/enable-session {:cookie-name "SID"
+                                              :store (cookie/cookie-store)}
                   ::bootstrap/port (Integer/valueOf (or (System/getenv "PORT") "8080"))}
                (bootstrap/default-interceptors)))
 
