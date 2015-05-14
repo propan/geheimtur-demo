@@ -12,8 +12,10 @@
               [geheimtur-demo.views :as views]
               [geheimtur-demo.users :refer [users]]
               [cheshire.core :refer [parse-string]]
+              [clojure.walk :refer [keywordize-keys]]
               [ring.middleware.session.cookie :as cookie]
-              [ring.util.response :as ring-resp]))
+              [ring.util.response :as ring-resp]
+              [ring.util.codec :as ring-codec]))
 
 (defn credentials
   [username password]
@@ -56,15 +58,35 @@
      (ring-resp/redirect return)
      (authenticate user))))
 
+(defn on-google-success
+  [{:keys [identity return]}]
+  (let [user {:name      (:displayName identity)
+              :roles     #{:user}
+              :full-name (:displayName identity)}]
+    (->
+     (ring-resp/redirect return)
+     (authenticate user))))
+
 (def providers
   {:github {:auth-url           "https://github.com/login/oauth/authorize"
-            :client-id          (or (System/getenv "github.client_id") "client-id")
-            :client-secret      (or (System/getenv "github.client_secret") "client-secret")
+            :client-id          (or (System/getenv "github_client_id") "client-id")
+            :client-secret      (or (System/getenv "github_client_secret") "client-secret")
             :scope              "user:email"
             :token-url          "https://github.com/login/oauth/access_token"
+            ;; use a custom function until (and if) https://github.com/dakrone/clj-http/pull/264 is merged
+            :token-parse-fn     #(-> % :body ring-codec/form-decode keywordize-keys)
             :user-info-url      "https://api.github.com/user"
-            :user-info-parse-fn #(parse-string % true)
-            :on-success-handler on-github-success}})
+            ;; it is not really need but serves as an example of how to use a custom parser
+            :user-info-parse-fn #(-> % :body (parse-string true))
+            :on-success-handler on-github-success}
+   :google {:auth-url           "https://accounts.google.com/o/oauth2/auth"
+            :client-id          (or (System/getenv "google_client_id") "client-id")
+            :client-secret      (or (System/getenv "google_client_secret") "client-secret")
+            :callback-uri       "http://localhost:8080/oauth.callback"
+            :scope              "profile email"
+            :token-url          "https://accounts.google.com/o/oauth2/token"
+            :user-info-url      "https://www.googleapis.com/plus/v1/people/me"
+            :on-success-handler on-google-success}})
 
 (def oath-handler
   (authenticate-handler providers))
