@@ -76,7 +76,7 @@
             ;; use a custom function until (and if) https://github.com/dakrone/clj-http/pull/264 is merged
             :token-parse-fn     #(-> % :body ring-codec/form-decode keywordize-keys)
             :user-info-url      "https://api.github.com/user"
-            ;; it is not really need but serves as an example of how to use a custom parser
+            ;; it is not really needed but serves as an example of how to use a custom parser
             :user-info-parse-fn #(-> % :body (parse-string true))
             :on-success-handler on-github-success}
    :google {:auth-url           "https://accounts.google.com/o/oauth2/auth"
