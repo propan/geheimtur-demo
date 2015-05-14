@@ -82,7 +82,7 @@
    :google {:auth-url           "https://accounts.google.com/o/oauth2/auth"
             :client-id          (or (System/getenv "google_client_id") "client-id")
             :client-secret      (or (System/getenv "google_client_secret") "client-secret")
-            :callback-uri       "http://localhost:8080/oauth.callback"
+            :callback-uri       "http://geheimtur.herokuapp.com/oauth.callback"
             :scope              "profile email"
             :token-url          "https://accounts.google.com/o/oauth2/token"
             :user-info-url      "https://www.googleapis.com/plus/v1/people/me"
