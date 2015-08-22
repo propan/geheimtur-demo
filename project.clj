@@ -8,7 +8,7 @@
                  [io.pedestal/pedestal.service-tools "0.4.0"]
                  [io.pedestal/pedestal.jetty "0.4.0"]
                  [hiccup "1.0.4"]
-                 [geheimtur "0.1.5"]
+                 [geheimtur "0.2.1"]
                  [cheshire "5.2.0"]]
   :min-lein-version "2.0.0"
   :resource-paths ["config", "resources"]

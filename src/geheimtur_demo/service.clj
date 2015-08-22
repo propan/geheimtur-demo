@@ -46,9 +46,6 @@
         (ring-resp/content-type "text/html;charset=UTF-8"))
        response))))
 
-(def login-post-handler
-  (default-login-handler {:credential-fn credentials}))
-
 (defn on-github-success
   [{:keys [identity return]}]
   (let [user {:name      (:login identity)
@@ -88,20 +85,14 @@
             :user-info-url      "https://www.googleapis.com/plus/v1/people/me"
             :on-success-handler on-google-success}})
 
-(def oath-handler
-  (authenticate-handler providers))
-
-(def oath-callback-handler
-  (callback-handler providers))
-
 (defroutes routes
   [[["/" {:get views/home-page}
      ^:interceptors [(body-params/body-params)
                      bootstrap/html-body]
-     ["/login" {:get views/login-page :post login-post-handler}]
+     ["/login" {:get views/login-page :post (default-login-handler {:credential-fn credentials})}]
      ["/logout" {:get default-logout-handler}]
-     ["/oauth.login" {:get oath-handler}]
-     ["/oauth.callback" {:get oath-callback-handler}]
+     ["/oauth.login" {:get (authenticate-handler providers)}]
+     ["/oauth.callback" {:get (callback-handler providers)}]
      ["/unauthorized" {:get views/unauthorized}]
      ["/interactive" {:get views/interactive-index} ^:interceptors [access-forbidden-interceptor (interactive {})]
       ["/restricted" {:get views/interactive-restricted} ^:interceptors [(guard :silent? false)]]
