@@ -1,24 +1,24 @@
 (ns geheimtur-demo.service
-    (:require [io.pedestal.http :as bootstrap]
-              [io.pedestal.http.route :as route]
-              [io.pedestal.http.body-params :as body-params]
-              [io.pedestal.http.route.definition :refer [defroutes]]
-              [io.pedestal.interceptor.helpers :as interceptor :refer [on-response]]
-              [io.pedestal.log :as log]
-              [geheimtur.interceptor :refer [interactive guard http-basic]]
-              [geheimtur.impl.form-based :refer [default-login-handler default-logout-handler]]
-              [geheimtur.impl.oauth2 :refer [authenticate-handler callback-handler]]
-              [geheimtur.util.auth :as auth :refer [authenticate]]
-              [geheimtur-demo.views :as views]
-              [geheimtur-demo.users :refer [users]]
-              [cheshire.core :refer [parse-string]]
-              [clojure.walk :refer [keywordize-keys]]
-              [ring.middleware.session.cookie :as cookie]
-              [ring.util.response :as ring-resp]
-              [ring.util.codec :as ring-codec]))
+  (:require [io.pedestal.http :as bootstrap]
+            [io.pedestal.http.route :as route]
+            [io.pedestal.http.body-params :as body-params]
+            [io.pedestal.http.route.definition :refer [defroutes]]
+            [io.pedestal.interceptor.helpers :as interceptor :refer [on-response]]
+            [io.pedestal.log :as log]
+            [geheimtur.interceptor :refer [interactive guard http-basic]]
+            [geheimtur.impl.form-based :refer [default-login-handler default-logout-handler]]
+            [geheimtur.impl.oauth2 :refer [authenticate-handler callback-handler]]
+            [geheimtur.util.auth :as auth :refer [authenticate]]
+            [geheimtur-demo.views :as views]
+            [geheimtur-demo.users :refer [users]]
+            [cheshire.core :refer [parse-string]]
+            [clojure.walk :refer [keywordize-keys]]
+            [ring.middleware.session.cookie :as cookie]
+            [ring.util.response :as ring-resp]
+            [ring.util.codec :as ring-codec]))
 
 (defn credentials
-  [username password]
+  [_ {:keys [username password]}]
   (when-let [identity (get users username)]
     (when (= password (:password identity))
       (dissoc identity :password ))))
@@ -47,7 +47,7 @@
        response))))
 
 (defn on-github-success
-  [{:keys [identity return]}]
+  [_ {:keys [identity return]}]
   (let [user {:name      (:login identity)
               :roles     #{:user}
               :full-name (:name identity)}]
@@ -56,7 +56,7 @@
      (authenticate user))))
 
 (defn on-google-success
-  [{:keys [identity return]}]
+  [_ {:keys [identity return]}]
   (let [user {:name      (:displayName identity)
               :roles     #{:user}
               :full-name (:displayName identity)}]
