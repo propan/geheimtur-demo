@@ -1,8 +1,8 @@
 # geheimtur-demo
 
-an application to demonstrate [geheimtur] [1] functionality.
+an application to demonstrate [geheimtur][1] functionality.
 
-[Live Demo] [2]
+[Live Demo][2]
 
 ## Getting Started
 

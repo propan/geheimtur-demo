@@ -1,15 +1,27 @@
 (ns geheimtur-demo.server
   (:gen-class) ; for -main method in uberjar
   (:require [io.pedestal.http :as server]
-            [geheimtur-demo.service :as service]
-            [io.pedestal.service-tools.dev :as dev]))
+            [io.pedestal.http.route :as route]
+            [geheimtur-demo.service :as service]))
 
 (defn run-dev
   "The entry-point for 'lein run-dev'"
   [& args]
-  (-> (dev/init service/service)
-      (server/create-server)
-      (server/start)))
+  (println "\nCreating your [DEV] server...")
+  (-> service/service ;; start with production configuration
+      (merge {:env                     :dev
+              ;; do not block thread that starts web server
+              ::server/join?           false
+              ;; Routes can be a function that resolve routes,
+              ;;  we can use this to set the routes to be reloadable
+              ::server/routes          #(route/expand-routes (deref #'service/routes))
+              ;; all origins are allowed in dev mode
+              ::server/allowed-origins {:creds true :allowed-origins (constantly true)}})
+      ;; Wire up interceptor chains
+      server/default-interceptors
+      server/dev-interceptors
+      server/create-server
+      server/start))
 
 ;; To implement your own server, copy io.pedestal.service-tools.server and
 ;; customize it.
