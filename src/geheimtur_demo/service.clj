@@ -1,9 +1,8 @@
 (ns geheimtur-demo.service
-  (:require [io.pedestal.http :as bootstrap]
+  (:require [io.pedestal.http :as http]
             [io.pedestal.http.route :as route]
             [io.pedestal.http.body-params :as body-params]
-            [io.pedestal.http.route.definition :refer [defroutes]]
-            [io.pedestal.interceptor.helpers :as interceptor :refer [on-response]]
+            [io.pedestal.interceptor :as interceptor]
             [io.pedestal.log :as log]
             [geheimtur.interceptor :refer [interactive guard http-basic]]
             [geheimtur.impl.form-based :refer [default-login-handler default-logout-handler]]
@@ -12,7 +11,6 @@
             [geheimtur-demo.views :as views]
             [geheimtur-demo.users :refer [users]]
             [cheshire.core :refer [parse-string]]
-            [clojure.walk :refer [keywordize-keys]]
             [ring.middleware.session.cookie :as cookie]
             [ring.util.response :as ring-resp]
             [ring.util.codec :as ring-codec]))
@@ -24,27 +22,29 @@
       (dissoc identity :password ))))
 
 (def access-forbidden-interceptor
-  (on-response
-   ::access-forbidden-interceptor
-   (fn [response]
-     (if (or
-          (= 401 (:status response))
-          (= 403 (:status response)))
-       (->
-        (views/error-page {:title "Access Forbidden" :message (:body response)})
-        (ring-resp/content-type "text/html;charset=UTF-8"))
-       response))))
+  (interceptor/interceptor
+   {:name  ::access-forbidden-interceptor
+    :leave (fn [{:keys [response] :as ctx}]
+             (let [resp (if (or
+                             (= 401 (:status response))
+                             (= 403 (:status response)))
+                          (->
+                           (views/error-page {:title "Access Forbidden" :message (:body response)})
+                           (ring-resp/content-type "text/html;charset=UTF-8"))
+                          response)]
+               (assoc ctx :response resp)))}))
 
 (def not-found-interceptor
-  (on-response
-   ::not-found-interceptor
-   (fn [response]
-     (if-not (ring-resp/response? response)
-       (->
-        (views/error-page {:title   "Not Found"
-                           :message "We are sorry, but the page you are looking for does not exist."})
-        (ring-resp/content-type "text/html;charset=UTF-8"))
-       response))))
+  (interceptor/interceptor
+   {:name  ::not-found-interceptor
+    :leave (fn [{:keys [response] :as ctx}]
+             (let [resp (if-not (ring-resp/response? response)
+                          (->
+                           (views/error-page {:title   "Not Found"
+                                              :message "We are sorry, but the page you are looking for does not exist."})
+                           (ring-resp/content-type "text/html;charset=UTF-8"))
+                          response)]
+               (assoc ctx :response resp)))}))
 
 (defn on-github-success
   [_ {:keys [identity return]}]
@@ -70,8 +70,6 @@
             :client-secret      (or (System/getenv "github_client_secret") "client-secret")
             :scope              "user:email"
             :token-url          "https://github.com/login/oauth/access_token"
-            ;; use a custom function until (and if) https://github.com/dakrone/clj-http/pull/264 is merged
-            :token-parse-fn     #(-> % :body ring-codec/form-decode keywordize-keys)
             :user-info-url      "https://api.github.com/user"
             ;; it is not really needed but serves as an example of how to use a custom parser
             :user-info-parse-fn #(-> % :body (parse-string true))
@@ -85,31 +83,33 @@
             :user-info-url      "https://www.googleapis.com/plus/v1/people/me"
             :on-success-handler on-google-success}})
 
-(defroutes routes
-  [[["/" {:get views/home-page}
-     ^:interceptors [(body-params/body-params)
-                     bootstrap/html-body]
-     ["/login" {:get views/login-page :post (default-login-handler {:credential-fn credentials})}]
-     ["/logout" {:get default-logout-handler}]
-     ["/oauth.login" {:get (authenticate-handler providers)}]
-     ["/oauth.callback" {:get (callback-handler providers)}]
-     ["/unauthorized" {:get views/unauthorized}]
-     ["/interactive" {:get views/interactive-index} ^:interceptors [access-forbidden-interceptor (interactive {})]
-      ["/restricted" {:get views/interactive-restricted} ^:interceptors [(guard :silent? false)]]
-      ["/admin-restricted" {:get views/interactive-admin-restricted} ^:interceptors [(guard :silent? false :roles #{:admin})]]
-      ["/admin-restricted-hidden" {:get views/interactive-admin-restricted-hidden} ^:interceptors [(guard :roles #{:admin})]]]
-     ["/http-basic" {:get views/http-basic-index} ^:interceptors [(http-basic "Geheimtür Demo" credentials)]
-      ["/restricted" {:get views/http-basic-restricted} ^:interceptors [(guard :silent? false)]]
-      ["/admin-restricted" {:get views/http-basic-admin-restricted} ^:interceptors [(guard :silent? false :roles #{:admin})]]
-      ["/admin-restricted-hidden" {:get views/http-basic-admin-restricted-hidden} ^:interceptors [(guard :roles #{:admin})]]]]]])
+(def common-interceptors [(body-params/body-params) http/html-body])
+(def interactive-interceptors (into common-interceptors [access-forbidden-interceptor (interactive {})]))
+(def http-basic-interceptors (into common-interceptors [(http-basic "Geheimtür Demo" credentials)]))
 
-(def service (-> {:env :prod
-                  ::bootstrap/routes routes
-                  ::bootstrap/resource-path "/public"
-                  ::bootstrap/not-found-interceptor not-found-interceptor
-                  ::bootstrap/type :jetty
-                  ::bootstrap/enable-session {:cookie-name "SID"
-                                              :store (cookie/cookie-store)}
-                  ::bootstrap/port (Integer/valueOf (or (System/getenv "PORT") "8080"))}
-               (bootstrap/default-interceptors)))
+(def routes
+  #{["/"                                   :get (conj common-interceptors `views/home-page)]
+    ["/login"                              :get (conj common-interceptors `views/login-page)]
+    ["/login"                              :post (conj common-interceptors (default-login-handler {:credential-fn credentials
+                                                                                                   :form-reader   identity}))]
+    ["/logout"                             :get (conj common-interceptors default-logout-handler)]
+    ["/oauth.login"                        :get (conj common-interceptors (authenticate-handler providers))]
+    ["/oauth.callback"                     :get (conj common-interceptors (callback-handler providers))]
+    ["/unauthorized"                       :get (conj common-interceptors `views/unauthorized)]
+    ["/interactive"                        :get (conj interactive-interceptors `views/interactive-index)]
+    ["/interactive/restricted"             :get (into interactive-interceptors [(guard :silent? false) `views/interactive-restricted])]
+    ["/interactive/admin-restricted"       :get (into interactive-interceptors [(guard :silent? false :roles #{:admin}) `views/interactive-admin-restricted])]
+    ["/interactive/admin-restricted-hidden" :get (into interactive-interceptors [(guard :roles #{:admin}) `views/interactive-admin-restricted-hidden])]
+    ["/http-basic"                         :get (conj http-basic-interceptors `views/http-basic-index)]
+    ["/http-basic/restricted"              :get (into http-basic-interceptors [(guard :silent? false) `views/http-basic-restricted])]
+    ["/http-basic/admin-restricted"        :get (into http-basic-interceptors [(guard :silent? false :roles #{:admin}) `views/http-basic-admin-restricted])]
+    ["/http-basic/admin-restricted-hidden" :get (into http-basic-interceptors [(guard :roles #{:admin}) `views/http-basic-admin-restricted-hidden])]})
 
+(def service {:env                         :prod
+              ::http/routes                routes
+              ::http/resource-path         "/public"
+              ::http/not-found-interceptor not-found-interceptor
+              ::http/type                  :jetty
+              ::http/enable-session        {:cookie-name "SID"
+                                            :store       (cookie/cookie-store)}
+              ::http/port                  (Integer/valueOf (or (System/getenv "PORT") "8080"))})
