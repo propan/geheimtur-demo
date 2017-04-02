@@ -4,7 +4,7 @@
             [io.pedestal.http.body-params :as body-params]
             [io.pedestal.interceptor :as interceptor]
             [io.pedestal.log :as log]
-            [geheimtur.interceptor :refer [interactive guard http-basic]]
+            [geheimtur.interceptor :refer [interactive guard http-basic token]]
             [geheimtur.impl.form-based :refer [default-login-handler default-logout-handler]]
             [geheimtur.impl.oauth2 :refer [authenticate-handler callback-handler]]
             [geheimtur.util.auth :as auth :refer [authenticate]]
@@ -20,6 +20,13 @@
   (when-let [identity (get users username)]
     (when (= password (:password identity))
       (dissoc identity :password ))))
+
+(defn token-credentials
+  [_ token]
+  (case token
+    "user-secret"  (-> (get users "user") (dissoc :password))
+    "admin-secret" (-> (get users "admin") (dissoc :password))
+    nil))
 
 (def access-forbidden-interceptor
   (interceptor/interceptor
@@ -88,22 +95,27 @@
 (def http-basic-interceptors (into common-interceptors [(http-basic "Geheimtür Demo" credentials)]))
 
 (def routes
-  #{["/"                                   :get (conj common-interceptors `views/home-page)]
-    ["/login"                              :get (conj common-interceptors `views/login-page)]
-    ["/login"                              :post (conj common-interceptors (default-login-handler {:credential-fn credentials
-                                                                                                   :form-reader   identity}))]
-    ["/logout"                             :get (conj common-interceptors default-logout-handler)]
-    ["/oauth.login"                        :get (conj common-interceptors (authenticate-handler providers))]
-    ["/oauth.callback"                     :get (conj common-interceptors (callback-handler providers))]
-    ["/unauthorized"                       :get (conj common-interceptors `views/unauthorized)]
-    ["/interactive"                        :get (conj interactive-interceptors `views/interactive-index)]
-    ["/interactive/restricted"             :get (into interactive-interceptors [(guard :silent? false) `views/interactive-restricted])]
-    ["/interactive/admin-restricted"       :get (into interactive-interceptors [(guard :silent? false :roles #{:admin}) `views/interactive-admin-restricted])]
-    ["/interactive/admin-restricted-hidden" :get (into interactive-interceptors [(guard :roles #{:admin}) `views/interactive-admin-restricted-hidden])]
-    ["/http-basic"                         :get (conj http-basic-interceptors `views/http-basic-index)]
-    ["/http-basic/restricted"              :get (into http-basic-interceptors [(guard :silent? false) `views/http-basic-restricted])]
-    ["/http-basic/admin-restricted"        :get (into http-basic-interceptors [(guard :silent? false :roles #{:admin}) `views/http-basic-admin-restricted])]
-    ["/http-basic/admin-restricted-hidden" :get (into http-basic-interceptors [(guard :roles #{:admin}) `views/http-basic-admin-restricted-hidden])]})
+  #{["/"                                    :get  (conj common-interceptors `views/home-page)]
+    ["/login"                               :get  (conj common-interceptors `views/login-page)]
+    ["/login"                               :post (conj common-interceptors (default-login-handler {:credential-fn credentials
+                                                                                                    :form-reader   identity}))]
+    ["/logout"                              :get  (conj common-interceptors default-logout-handler)]
+    ["/oauth.login"                         :get  (conj common-interceptors (authenticate-handler providers))]
+    ["/oauth.callback"                      :get  (conj common-interceptors (callback-handler providers))]
+    ["/unauthorized"                        :get  (conj common-interceptors `views/unauthorized)]
+    ["/interactive"                         :get  (conj interactive-interceptors `views/interactive-index)]
+    ["/interactive/restricted"              :get  (into interactive-interceptors [(guard :silent? false) `views/interactive-restricted])]
+    ["/interactive/admin-restricted"        :get  (into interactive-interceptors [(guard :silent? false :roles #{:admin}) `views/interactive-admin-restricted])]
+    ["/interactive/admin-restricted-hidden" :get  (into interactive-interceptors [(guard :roles #{:admin}) `views/interactive-admin-restricted-hidden])]
+    ["/http-basic"                          :get  (conj http-basic-interceptors `views/http-basic-index)]
+    ["/http-basic/restricted"               :get  (into http-basic-interceptors [(guard :silent? false) `views/http-basic-restricted])]
+    ["/http-basic/admin-restricted"         :get  (into http-basic-interceptors [(guard :silent? false :roles #{:admin}) `views/http-basic-admin-restricted])]
+    ["/http-basic/admin-restricted-hidden"  :get  (into http-basic-interceptors [(guard :roles #{:admin}) `views/http-basic-admin-restricted-hidden])]
+    ["/api/restricted"                      :get  [http/json-body (token token-credentials
+                                                                         :error-fn (fn [context error]
+                                                                                     (assoc context :response {:status 403
+                                                                                                               :headers {}
+                                                                                                               :body    {:message (:reason error)}}))) (guard :silent? false) `views/api-restricted]]})
 
 (def service {:env                         :prod
               ::http/routes                routes

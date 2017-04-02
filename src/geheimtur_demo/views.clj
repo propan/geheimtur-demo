@@ -118,8 +118,8 @@
                              You can use one of the known credentials or an external service like GitHub or Google to log in.
                              Below you can find links that lead to the pages with different access level.
                              Geheimtur allows to to hide pages from anonymous users or users that have not enough access rights. "
-                             [:strong "admin-restricted-hidden"] " - is an example of such a page, instead of getting \"Access Forbidden\" page "
-                            "or being prompted their password, users are shown 404 \"Page Not Found\" in response."]
+                         [:strong "admin-restricted-hidden"] " - is an example of such a page, instead of getting \"Access Forbidden\" page "
+                         "or being prompted their password, users are shown 404 \"Page Not Found\" in response."]
                         [:div {:class "alert alert-danger"}
                          "If you use GitHub or Google to login into the demo application, for security reasons, don't forget to revoke access to \"Geheimur Application\" when you are done,
                           even though the demo applicaiton does not store obtained access token."]
@@ -210,3 +210,9 @@
                                             (for [rec users
                                                   :let [u (second rec)]]
                                               [:li [:strong (:full-name u)] ": " (:name u) "/" (:password u)])]]))))
+
+(defn api-restricted
+  [request]
+  {:status  200
+   :headers {}
+   :body    {:message "OK"}})
