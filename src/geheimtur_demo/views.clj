@@ -32,7 +32,9 @@
      [:li
       [:a {:href "/interactive"} "Interactive"]]
      [:li
-      [:a {:href "/http-basic"} "HTTP-Basic"]]]
+      [:a {:href "/http-basic"} "HTTP-Basic"]]
+     [:li
+      [:a {:href "/token-based"} "Bearer Token"]]]
     (when-not (nil? user)
       [:div {:class "navbar-right"}
        [:p {:class "navbar-text"}
@@ -211,8 +213,57 @@
                                                   :let [u (second rec)]]
                                               [:li [:strong (:full-name u)] ": " (:name u) "/" (:password u)])]]))))
 
+(defn token-based-index
+  [request]
+  (ring-resp/response (h/html5 head (body (get-identity request)
+                                          [:div {:class "col-lg-8 col-lg-offset-2"}
+                                           [:h2 "Bearer Token"]
+                                           [:p "The application exposes a few API routes that are accessible by authenticated users only."]
+                                           [:h3 "Authenticated Users"]
+                                           [:p [:mark {:style "padding: .2em; background-color: rgba(27,31,35,0.05); color: #3c3c3c; border-radius: 3px;"} "http://localhost:8080/api/restricted"] " is available to authenticated users only."
+                                            [:h4 "Failing request:"]
+                                            [:pre
+                                             [:code
+                                              "curl -H \"Content-Type: application/json\" http://localhost:8080/api/restricted"]]
+                                            [:h4 "Output:"]
+                                            [:pre
+                                             [:code
+                                              "{\"error\":\"You are not allowed to access to this resource\"}"]]
+                                            [:h4 "Successful request:"]
+                                            [:pre
+                                             [:code
+                                              "curl -H \"Content-Type: application/json\" -H \"Authorization: Bearer user-secret\" http://localhost:8080/api/restricted"]]
+                                            [:h4 "Output:"]
+                                            [:pre
+                                             [:code
+                                              "{\"message\":\"OK\"}"]]]
+                                           [:h3 "Admin Users"]
+                                           [:p [:mark {:style "padding: .2em; background-color: rgba(27,31,35,0.05); color: #3c3c3c; border-radius: 3px;"} "http://localhost:8080/api/admin-restricted"] " is available to administrators only."
+                                            [:h4 "Failing request:"]
+                                            [:pre
+                                             [:code
+                                              "curl -H \"Content-Type: application/json\" -H \"Authorization: Bearer user-secret\" http://localhost:8080/api/admin-restricted"]]
+                                            [:h4 "Output:"]
+                                            [:pre
+                                             [:code
+                                              "{\"error\":\"You are not allowed to access to this resource\"}"]]
+                                            [:h4 "Successful request:"]
+                                            [:pre
+                                             [:code
+                                              "curl -H \"Content-Type: application/json\" -H \"Authorization: Bearer admin-secret\" http://localhost:8080/api/admin-restricted"]]
+                                            [:h4 "Output:"]
+                                            [:pre
+                                             [:code
+                                              "{\"message\":\"OK, Admin!\",\"identity\":{\"name\":\"admin\",\"roles\":[\"admin\",\"agent\"],\"full-name\":\"Dale Cooper\"}}"]]]]))))
+
 (defn api-restricted
   [request]
   {:status  200
    :headers {}
    :body    {:message "OK"}})
+
+(defn api-admin-restricted
+  [request]
+  {:status  200
+   :headers {}
+   :body    {:message "OK, Admin!" :identity (get-identity request)}})

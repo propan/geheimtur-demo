@@ -53,6 +53,12 @@
                           response)]
                (assoc ctx :response resp)))}))
 
+(defn api-error
+  [context error]
+  {:status 403
+   :headers {}
+   :body    {:error (:reason error)}})
+
 (defn on-github-success
   [_ {:keys [identity return]}]
   (let [user {:name      (:login identity)
@@ -111,11 +117,9 @@
     ["/http-basic/restricted"               :get  (into http-basic-interceptors [(guard :silent? false) `views/http-basic-restricted])]
     ["/http-basic/admin-restricted"         :get  (into http-basic-interceptors [(guard :silent? false :roles #{:admin}) `views/http-basic-admin-restricted])]
     ["/http-basic/admin-restricted-hidden"  :get  (into http-basic-interceptors [(guard :roles #{:admin}) `views/http-basic-admin-restricted-hidden])]
-    ["/api/restricted"                      :get  [http/json-body (token token-credentials
-                                                                         :error-fn (fn [context error]
-                                                                                     (assoc context :response {:status 403
-                                                                                                               :headers {}
-                                                                                                               :body    {:message (:reason error)}}))) (guard :silent? false) `views/api-restricted]]})
+    ["/token-based"                         :get  (conj http-basic-interceptors `views/token-based-index)]
+    ["/api/restricted"                      :get  [http/json-body (token token-credentials :error-fn api-error) (guard :silent? false) `views/api-restricted]]
+    ["/api/admin-restricted"                :get  [http/json-body (token token-credentials :error-fn api-error) (guard :silent? false :roles #{:admin}) `views/api-admin-restricted]]})
 
 (def service {:env                         :prod
               ::http/routes                routes
