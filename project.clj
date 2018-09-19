@@ -16,4 +16,6 @@
   :min-lein-version "2.0.0"
   :resource-paths ["config", "resources"]
   :aliases {"run-dev" ["trampoline" "run" "-m" "geheimtur-demo.server/run-dev"]}
-  :main ^{:skip-aot true} geheimtur-demo.server)
+  :uberjar-name "geheimtur-demo.jar"
+  :main geheimtur-demo.server
+  :profiles {:uberjar {:aot :all}})

@@ -2,6 +2,7 @@
   (:gen-class) ; for -main method in uberjar
   (:require [io.pedestal.http :as server]
             [io.pedestal.http.route :as route]
+            [io.pedestal.log :as log]
             [geheimtur-demo.service :as service]))
 
 (defn run-dev
@@ -29,9 +30,12 @@
 (defn -main
   "The entry-point for 'lein run'"
   [& args]
-  (-> service/service
-      (server/create-server)
-      (server/start)))
+  (let [config service/service]
+    (log/info :msg "Starting HTTP server" :port (::server/port config))
+    (-> config
+        (assoc ::server/host "0.0.0.0")
+        (server/create-server)
+        (server/start))))
 
 ;; Fns for use with io.pedestal.servlet.ClojureVarServlet
 
